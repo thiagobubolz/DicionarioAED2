@@ -73,10 +73,14 @@ struct Arvore{
         raiz = NULL;
     }
 
+    //Metodo publico que apenas chama o metodo buscarSugestões passando a raiz e a palavra como parametro
     void buscaSugestoes(string palavra){
 		buscarSugestoes(palavra, raiz);
 	}
 
+	//Metodo que implementa o algoritmo edit distance
+	//O metodo compara duas palavras e retorna um inteiro com a distancia entre as duas
+	//se a distancia for menor que 2 e maior que 0 serve para o proposito do corretor
 	int calculaDistancia(string palavra1, string palavra2){
 		int tamanho1 = palavra1.length();
 		int tamanho2 = palavra2.length();
@@ -126,6 +130,8 @@ private:
         return nodo;
     }
 
+    //Metodo privado que percorre a arvore em ordem alfabetica
+    //calcula a distancia entre as palavras e se satisfaz a distancia imprime a palavra
     nodoArvore* buscarSugestoes(string palavra, nodoArvore* raiz){
 		/*if(raiz->filhodireita ==NULL && raiz->filhoesquerda == NULL){
 			return raiz;
@@ -147,13 +153,14 @@ private:
 		if (raiz != NULL) {
             buscarSugestoes(palavra, raiz->filhoesquerda);
             distancia = calculaDistancia(palavra, raiz->palavra);
-            if(distancia <= 2){
+            if(distancia <= 2 && distancia > 0){
 				cout << raiz->palavra << endl;
 			}
             buscarSugestoes(palavra, raiz->filhodireita);
         }
 	}
 
+	//Metodo que procura o maior nodo da arvore a partir da raiz passada como parametro
     nodoArvore* maiorDireita(nodoArvore *raiz){
     	nodoArvore* aux = raiz;
     	if(raiz->filhodireita != NULL){
@@ -168,14 +175,18 @@ private:
     	}
     }
 
-    //Metodo privado que remove um nodo na lista
+    //Metodo privado que remove um nodo na lista, deu uma trabalheira do cão hehe
     nodoArvore* removerNodoArvore(string palavra, nodoArvore *raiz){
     	nodoArvore* aux = raiz;
     	nodoArvore* auxe;
     	nodoArvore* auxd;
     	//teste caso a busca tenha terminado e o nodo não foi encontrado
     	if(raiz == NULL){
-    		cout << "Numero não existe na arvore" << endl;
+    		return raiz;
+    	}
+    	//Para não remover a cabeça da arvore, apenas atualiza a palavra da raiz para vazia
+    	if(raiz->pai == NULL){
+    		raiz->palavra = "";
     		return raiz;
     	}
 		if(palavra < aux->palavra){
@@ -352,8 +363,9 @@ struct corretorOrtografico{
 			aux->palavra = palavra;
 			arvorebin->insereArvore(palavra);
 			numentradas++;
-			if(calculaFatordeCarga() > FCM){
-				//reHash();
+			calculaFatordeCarga();
+			if(FC > FCM){
+				reHash();
 			}
 			return "ok";
 		}
@@ -364,12 +376,15 @@ struct corretorOrtografico{
             numentradas++;
             calculaFatordeCarga();
             if(FC > FCM){
-                //reHash();
+                reHash();
             }
             return "ok";
         }else return "fail"; //Se a busca não for NULL é porque ja existe a palavra e retorna fail ao inserir
 	}
 
+	//Metodo chamado quando a hash bate o fator de carga maximo, 
+	//o metodo cria uma lista pra hash com o dobro do tamanho da anterior
+	//logo após insere novamente todas as palavras de volta na hash em suas novas posições
 	void reHash(){
 		unsigned int posicao;
 	    nodoLista *atual,*anterior;
@@ -407,6 +422,7 @@ struct corretorOrtografico{
 	    calculaFatordeCarga();
 	}
 
+	//Metodo que remove uma palavra da Hash, busca seu indice, e entra na lista até achar o nodo e o remover
 	string removePalavra(string palavra){
 	    if(palavra != ""){
 	        unsigned int posicao = hashcode(palavra)%tamanhoHash;
@@ -428,6 +444,8 @@ struct corretorOrtografico{
 	    }else return "fail";
 	}
 
+
+	//Metodo que faz uma busca na Hash para encontrar a palavra, retorna ok se achou e fail se não achou
 	string buscaPalavra(string palavra){
 	    unsigned int posicao = hashcode(palavra)%tamanhoHash;
 	    nodoLista* aux = lista[posicao];
@@ -440,7 +458,7 @@ struct corretorOrtografico{
 	}
 
 	//Função hash que calcula a posição da palavra na hash,
-	//foi o calculo amis rapido e de melhor espalhamento achado
+	//foi o calculo mais rapido e de melhor espalhamento achado
 	unsigned int hashcode(string palavra){
 	    string aux = palavra;
 	    unsigned int h = 181421; //Numero primo grande
@@ -451,11 +469,14 @@ struct corretorOrtografico{
 	    return h;
 	}
 
+	//Metodo que calcula o fator de carga atual da Hash
 	float calculaFatordeCarga(){
-		float FC = (float) (numentradas/tamanhoHash);
+		FC = (float) (numentradas/tamanhoHash);
 		return FC;
 	}
 
+	//Metodo usado para alguns testes, 
+	//ele printa toda a Hash colocando primeiro seu idice e depois as palavras naquele indice
 	void printHash(){
 		nodoLista* nodo;
 		for(int i=0; i < tamanhoHash; i++){
@@ -501,33 +522,30 @@ int main(){
         cin >> entrada;
         transform(entrada.begin(),entrada.end(),entrada.begin(),::tolower);
     }
-    dicionario.printHash();
+		    /*corretorOrtografico dicionario = new corretorOrtografico()
 
+		    string palavra;
+		    int escolha;
 
-    /*corretorOrtografico dicionario = new corretorOrtografico()
-
-    string palavra;
-    int escolha;
-
-    cout << "Escolha 0 para sair 1 insere 2 printa 3 remove" << endl;
-    cin >> escolha;
-    do{
-        if(escolha == 1){
-            cout << "Palavra : ";
-            cin >> palavra;
-            arvore.insereArvore(palavra);
-        }else if(escolha == 2){
-            arvore.imprimeAlfabeticaArvore();
-        }else if(escolha == 3){
-                cout << "Palavra : ";
-                cin >> palavra;
-                arvore.removeNodoArvore(palavra);
-                }else if(escolha == 5){
-                    cout << "Palavra:";
-                    cin >> palavra;
-                    arvore.buscaSugestoes(palavra);
-                }
-        cout << "Escolha 0 para sair 1 insere 2 printa 3 remove" << endl; 
-        cin >> escolha;
-    }while(escolha != 0);*/
+		    cout << "Escolha 0 para sair 1 insere 2 printa 3 remove" << endl;
+		    cin >> escolha;
+		    do{
+		        if(escolha == 1){
+		            cout << "Palavra : ";
+		            cin >> palavra;
+		            arvore.insereArvore(palavra);
+		        }else if(escolha == 2){
+		            arvore.imprimeAlfabeticaArvore();
+		        }else if(escolha == 3){
+		                cout << "Palavra : ";
+		                cin >> palavra;
+		                arvore.removeNodoArvore(palavra);
+		                }else if(escolha == 5){
+		                    cout << "Palavra:";
+		                    cin >> palavra;
+		                    arvore.buscaSugestoes(palavra);
+		                }
+		        cout << "Escolha 0 para sair 1 insere 2 printa 3 remove" << endl; 
+		        cin >> escolha;
+		    }while(escolha != 0);*/
 }
