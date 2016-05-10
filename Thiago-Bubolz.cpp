@@ -127,7 +127,7 @@ private:
     }
 
     nodoArvore* buscarSugestoes(string palavra, nodoArvore* raiz){
-		if(raiz->filhodireita ==NULL && raiz->filhoesquerda == NULL){
+		/*if(raiz->filhodireita ==NULL && raiz->filhoesquerda == NULL){
 			return raiz;
 		}else if(raiz->filhodireita == NULL){
 				buscarSugestoes(palavra, raiz->filhoesquerda);
@@ -142,7 +142,16 @@ private:
 		cout << distancia << endl;
 		if(distancia <= 2){
 			cout << raiz->palavra << endl;
-		}
+		}*/
+		int distancia;
+		if (raiz != NULL) {
+            buscarSugestoes(palavra, raiz->filhoesquerda);
+            distancia = calculaDistancia(palavra, raiz->palavra);
+            if(distancia <= 2){
+				cout << raiz->palavra << endl;
+			}
+            buscarSugestoes(palavra, raiz->filhodireita);
+        }
 	}
 
     nodoArvore* maiorDireita(nodoArvore *raiz){
@@ -361,6 +370,43 @@ struct corretorOrtografico{
         }else return "fail"; //Se a busca não for NULL é porque ja existe a palavra e retorna fail ao inserir
 	}
 
+	void reHash(){
+		unsigned int posicao;
+	    nodoLista *atual,*anterior;
+	   
+	    int novoTamanho = tamanhoHash*2;
+	    nodoLista **novaLista = (nodoLista**) malloc(novoTamanho*sizeof(nodoLista*));
+	    
+	    for(int i = 0; i < novoTamanho; i++){
+	        novaLista[i] = new nodoLista();
+	    }
+	    
+	    for(int i = 0; i < tamanhoHash; i++){
+	        atual = lista[i];
+	        while(atual != NULL){
+	            if(atual->palavra != ""){// para nao tentar inserir palavras vazias
+	                posicao = hashcode(atual->palavra) % novoTamanho;
+	                if(novaLista[posicao]->palavra == ""){
+	                    novaLista[posicao]->palavra = atual->palavra;
+	                }
+	                else{
+	                    novaLista[posicao]->insereNodoLista(atual->palavra);
+	                }
+	                anterior = atual;
+	                atual = atual->prox;
+	                delete(anterior);
+	            }
+	            else{//caso em que o nodo é o primeiro da lista e não houve inserção nele, ele ainda contém ""
+	                 atual = atual->prox;
+	            }
+	        }
+	    }
+	    delete(lista);
+	    lista = novaLista;
+	    tamanhoHash = novoTamanho; 
+	    calculaFatordeCarga();
+	}
+
 	string removePalavra(string palavra){
 	    if(palavra != ""){
 	        unsigned int posicao = hashcode(palavra)%tamanhoHash;
@@ -410,11 +456,55 @@ struct corretorOrtografico{
 		return FC;
 	}
 
+	void printHash(){
+		nodoLista* nodo;
+		for(int i=0; i < tamanhoHash; i++){
+			nodo = lista[i];
+			cout << "Indice:" << i << endl;
+			while(nodo!=NULL){
+				cout << nodo->palavra << endl;
+				nodo = nodo->prox;
+			}
+		}
+	}
+
 };
 
 
 int main(){
-    Arvore arvore;
+	corretorOrtografico dicionario(50,5);
+    string entrada, palavra;
+
+    cin >> entrada;
+    transform(entrada.begin(),entrada.end(),entrada.begin(),::tolower); //Para deixar todas as letras minúsculas
+    palavra = "";
+    
+    while(entrada != "*"){
+        if(entrada == "+"){
+                cout << dicionario.inserePalavra(palavra) << endl;
+        }
+        else{             
+            if(entrada == "-"){
+                    cout << dicionario.removePalavra(palavra) << endl;
+            }
+            else{
+                palavra = entrada;
+                if(dicionario.buscaPalavra(palavra) == "ok"){
+                    cout << "ok" << endl;
+                }
+                else{
+                	cout << "not found" <<endl;
+                    dicionario.arvorebin->buscaSugestoes(palavra);
+                }
+            }
+        }
+        cin >> entrada;
+        transform(entrada.begin(),entrada.end(),entrada.begin(),::tolower);
+    }
+    dicionario.printHash();
+
+
+    /*corretorOrtografico dicionario = new corretorOrtografico()
 
     string palavra;
     int escolha;
@@ -439,5 +529,5 @@ int main(){
                 }
         cout << "Escolha 0 para sair 1 insere 2 printa 3 remove" << endl; 
         cin >> escolha;
-    }while(escolha != 0);
+    }while(escolha != 0);*/
 }
